@@ -5,7 +5,7 @@ trigger:
       - main
   paths:
     include:
-      - Backend/**
+      - backend/**
 
 pr:
   branches:
@@ -13,11 +13,11 @@ pr:
       - main
   paths:
     include:
-      - Backend/**
+      - backend/**
 
 variables:
   BuildConfiguration: 'Release'
-  workingDirectory: 'Backend'                # Thư mục dự án API
+  workingDirectory: 'backend'                # Thư mục dự án API
   appName: 'APIfarmtimemanagement'           # Tên Azure App Service
   azureServiceConnection: 'Tim_Serviceconnection_API'     # Đổi thành tên service connection bạn đã tạo
   webAppKind: 'webApp'                       # Windows: 'webApp' | Linux: 'webAppLinux'
@@ -54,7 +54,6 @@ stages:
       workingDirectory: '$(workingDirectory)'
       displayName: 'Publish'
 
-    # (Tuỳ chọn) Lưu artifact nếu bạn muốn multi-stage
     - task: PublishBuildArtifacts@1
       displayName: 'Publish artifact'
       inputs:
@@ -75,4 +74,4 @@ stages:
         azureSubscription: '$(azureServiceConnection)'
         appName: '$(appName)'
         appType: '$(webAppKind)'  # Windows: webApp | Linux: webAppLinux
-        package: '$(Pipeline.Workspace)/drop'  # deploy cả thư mục publish (zip deploy)
+        package: '$(Pipeline.Workspace)/drop'
