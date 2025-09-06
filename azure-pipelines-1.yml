@@ -1,0 +1,72 @@
+# azure-pipelines-frontend.yml
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - frontendWebsite/**
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - frontendWebsite/**
+
+variables:
+  nodeVersion: '20.x'
+  workingDirectory: 'frontendWebsite'          # Thư mục code FE
+  buildOutput: 'dist'                          # Output sau khi build TS
+  appName: 'frontendWebsite'                   # Tên Azure App Service frontend
+  azureServiceConnection: 'Tim_Serviceconnection_API'       # Service connection cũ (dùng chung với backend)
+  webAppKind: 'webApp'                         # Windows: webApp | Linux: webAppLinux
+
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+- stage: Build_And_Deploy
+  displayName: Build and Deploy Frontend Website
+  jobs:
+  - job: Build
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '$(nodeVersion)'
+      displayName: 'Use Node.js $(nodeVersion)'
+
+    - script: npm ci
+      workingDirectory: '$(workingDirectory)'
+      displayName: 'Install dependencies'
+
+    - script: npm run build
+      workingDirectory: '$(workingDirectory)'
+      displayName: 'Build (tsc / bundler)'
+
+    - script: |
+        mkdir "$(Build.ArtifactStagingDirectory)\site"
+        xcopy "$(workingDirectory)\$(buildOutput)" "$(Build.ArtifactStagingDirectory)\site" /E /I /Y
+      displayName: 'Stage build output'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish build artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)\site'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+  - job: Deploy
+    dependsOn: Build
+    steps:
+    - download: current
+      artifact: drop
+
+    - task: AzureWebApp@1
+      displayName: 'Deploy to $(appName)'
+      inputs:
+        azureSubscription: '$(azureServiceConnection)'
+        appName: '$(appName)'
+        appType: '$(webAppKind)'
+        package: '$(Pipeline.Workspace)\drop'
